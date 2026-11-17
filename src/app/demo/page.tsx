@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/lib/i18n";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, getSavedSession } from "@/lib/api-client";
 import type { TechnologyItem } from "@/lib/api-types";
 import {
   Card,
@@ -17,17 +17,16 @@ import {
   PlusCircle,
   ArrowRight,
   FileUp,
-  Cpu,
   FileText,
-  Sparkles,
-  CheckCircle2,
-  Play,
   Calculator,
   Microscope,
+  CheckCircle2,
+  Download,
+  TrendingUp,
 } from "lucide-react";
 
 const inputClass =
-  "mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200";
+  "mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-200";
 const labelClass = "block text-sm font-medium text-slate-800";
 
 export default function DemoWorkspacePage() {
@@ -37,6 +36,7 @@ export default function DemoWorkspacePage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
+  const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -90,8 +90,8 @@ export default function DemoWorkspacePage() {
       setSelectedTechId(created.id);
       setSuccess(
         id
-          ? "Teknologi berhasil ditambahkan. Langkah berikutnya: unggah dokumen."
-          : "Technology added. Next step: upload your documents."
+          ? "Paten / Inovasi baru berhasil didaftarkan. Silakan lanjut ke Langkah 1 (Unggah Dokumen) atau Langkah 2 (Hitung Valuasi)."
+          : "New patent / innovation registered. Proceed to Step 1 (Upload Documents) or Step 2 (Calculate Valuation)."
       );
       setNewTitleEn("");
       setNewTitleId("");
@@ -109,44 +109,74 @@ export default function DemoWorkspacePage() {
   const titleOf = (tech: TechnologyItem) =>
     id && tech.title_id ? tech.title_id : tech.title_en;
 
-  const steps = [
+  const handleQuickDownloadReport = async () => {
+    if (!activeTech) return;
+    setDownloadingPdf(true);
+    setError(null);
+    try {
+      const report = await apiClient.generateReport({
+        technology_id: activeTech.id,
+        language: lang,
+      });
+      const session = getSavedSession();
+      const res = await fetch(apiClient.getReportDownloadUrl(report.id), {
+        headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Laporan_Valuasi_${activeTech.code}_${lang.toUpperCase()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message || "Gagal mengunduh laporan PDF");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const quickSteps = [
     {
+      step: "1",
       href: "/submission",
       icon: FileUp,
-      title: id ? "1. Unggah & Audit Dokumen" : "1. Upload & Audit Documents",
+      title: id ? "Unggah Dokumen Paten / Invensi" : "Upload Patent / Tech Documents",
       desc: id
-        ? "Tambahkan spesifikasi paten/teknis dengan verifikasi SHA-256 & brankas terenkripsi."
-        : "Add patent or technical files with SHA-256 verification and encrypted vault storage.",
+        ? "Masukkan file deskripsi paten atau hasil uji lab/pilot. Sistem otomatis memeriksa kelengkapan bukti dan tingkat kesiapan (TKT/TRL)."
+        : "Upload patent specifications or lab/pilot test files. The system automatically checks evidence completeness and TRL.",
+      cta: id ? "Unggah Dokumen" : "Upload Documents",
     },
     {
-      href: "/pipeline",
-      icon: Cpu,
-      title: id ? "2. Eksekusi 8-Agen LangGraph" : "2. Run 8-Agent LangGraph",
-      desc: id
-        ? "AI mengekstrak bukti kutipan persis (page:N / para:N) dan memvalidasi TRL 1–9."
-        : "AI extracts exact verbatim quotes (page:N / para:N) and validates NASA TRL 1–9.",
-    },
-    {
+      step: "2",
       href: "/valuation",
       icon: Calculator,
-      title: id ? "3. Simulasi Valuasi WIPO (IDR)" : "3. WIPO Valuation Studio (IDR)",
+      title: id ? "Hitung Valuasi & Royalti (Rupiah)" : "Calculate Valuation & Royalty (IDR)",
       desc: id
-        ? "Uji skenario DCF, Relief-from-Royalty, Cost, & Monte Carlo dalam Rupiah."
-        : "Simulate DCF, Relief-from-Royalty, Cost, & Monte Carlo scenarios in IDR.",
+        ? "Tentukan nilai ekonomi paten dalam Rupiah menggunakan standar WIPO (DCF, Relief-from-Royalty, dan Biaya Riset) secara mudah."
+        : "Determine the economic value of the patent in Rupiah using WIPO standards (DCF, Relief-from-Royalty, and Cost Approach).",
+      cta: id ? "Buka Kalkulator Valuasi" : "Open Valuation Calculator",
+      primary: true,
     },
     {
+      step: "3",
       href: "/reports",
       icon: FileText,
-      title: id ? "4. Unduh Laporan Resmi PDF" : "4. Download Official PDF Report",
+      title: id ? "Cetak Laporan Resmi (PDF)" : "Download Official Report (PDF)",
       desc: id
-        ? "Ekspor laporan valuasi dwibahasa siap audit untuk DJKI, TTO, atau mitra industri."
-        : "Export audit-ready bilingual PDF reports for DJKI, TTOs, or industrial partners.",
+        ? "Unduh dokumen hasil penilaian & valuasi resmi siap pakai untuk keperluan DJKI, kampus (TTO/BTP), maupun mitra lisensi industri."
+        : "Download the official assessment & valuation PDF ready for DJKI, university TTOs, and industrial licensing partners.",
+      cta: id ? "Lihat & Unduh Laporan" : "View & Download Reports",
     },
   ];
 
   return (
-    <div className="space-y-8">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+    <div className="space-y-7">
+      {/* Simple & Clear Header for DJKI / Campus / BTP Users */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="max-w-2xl space-y-2">
             <div className="inline-flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5">
@@ -163,100 +193,116 @@ export default function DemoWorkspacePage() {
               />
               <span className="text-xs font-semibold text-red-700">
                 {id
-                  ? "Telkom University × Bandung Techno Park · Hub Valuasi & Komersialisasi"
-                  : "Telkom University × Bandung Techno Park · Valuation & Commercialization Hub"}
+                  ? "Dashboard Valuasi Paten & Teknologi · Siap Pakai untuk Kampus, BTP & DJKI"
+                  : "Patent & Technology Valuation Dashboard · Built for Universities, BTP & DJKI"}
               </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               {id
-                ? "Portofolio Valuasi Teknologi, Hilirisasi Kampus & Lisensi Industri"
-                : "Technology Valuation, University Spin-off & Industrial Licensing Portfolio"}
+                ? "Beranda Valuasi & Komersialisasi Teknologi"
+                : "Technology Valuation & Commercialization Dashboard"}
             </h1>
             <p className="text-sm leading-relaxed text-slate-600">
               {id
-                ? "Kelola invensi kampus dan tenant Bandung Techno Park. Hitung valuasi ekonomi WIPO (IDR), verifikasi TRL 1–9, dan cetak dokumen komersialisasi siap transaksi untuk mitra industri."
-                : "Manage university inventions and Bandung Techno Park tenant technologies. Compute WIPO IDR valuations, verify NASA TRL 1–9, and export deal-ready reports for industrial partners."}
+                ? "Gunakan 3 langkah mudah di bawah ini untuk menilai kematangan teknologi (TKT/TRL), menghitung nilai valuasi ekonomi dalam Rupiah (Standar WIPO), dan mengunduh laporan PDF resmi."
+                : "Follow the 3 simple steps below to assess technology readiness (TRL), calculate WIPO economic valuation in Rupiah, and download official PDF reports."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="border-slate-300"
+            >
+              <PlusCircle className="h-4 w-4 text-red-600" />
+              {id ? "Daftarkan Paten / Inovasi Baru" : "Register New Patent / Tech"}
+            </Button>
             <Link
               href="/valuation"
-              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700"
             >
               <Calculator className="h-4 w-4" />
-              {id ? "Studio Valuasi WIPO" : "WIPO Valuation Studio"}
-            </Link>
-            <Link
-              href="/pipeline"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
-            >
-              <Play className="h-4 w-4 text-red-600" />
-              {id ? "Jalankan Analisis AI" : "Run AI Analysis"}
-            </Link>
-            <Link
-              href="/advisor"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-            >
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              {id ? "Tanya Penasihat AI" : "Ask AI Advisor"}
+              {id ? "Langsung Hitung Valuasi" : "Calculate Valuation Now"}
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">
-            {id ? "Portofolio Teknologi Aktif" : "Active Technology Portfolio"}
-          </h2>
-          <p className="mt-1 text-sm text-slate-600">
-            {id
-              ? "Pilih kasus teknologi di bawah atau tambahkan invensi baru untuk diuji dari awal."
-              : "Select an existing technology case below or add a new invention to test from scratch."}
-          </p>
-        </div>
-        <Button size="lg" onClick={() => setShowCreateForm(!showCreateForm)}>
-          <PlusCircle className="h-5 w-5" />
-          {id ? "Tambah Teknologi Baru" : "Add New Technology"}
-        </Button>
-      </div>
-
       {error && (
-        <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800">
+        <div
+          role="alert"
+          className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800"
+        >
           {t.common.errorPrefix} {error}
         </div>
       )}
       {success && (
-        <div role="status" className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800">
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800"
+        >
           {success}
         </div>
       )}
 
+      {/* Simple Create Form when clicked */}
       {showCreateForm && (
-        <Card>
-          <h2 className="mb-1 text-xl font-semibold text-slate-900">
-            {id ? "Tambah teknologi baru" : "Add a new technology"}
+        <Card className="border-red-200 bg-red-50/20">
+          <h2 className="mb-1 text-xl font-bold text-slate-900">
+            {id ? "Daftarkan Paten / Inovasi Baru" : "Register a New Patent / Innovation"}
           </h2>
           <p className="mb-5 text-sm text-slate-600">
-            {id ? "Isi informasi dasar saja. Anda bisa melengkapinya nanti." : "Just the basics. You can fill in the rest later."}
+            {id
+              ? "Cukup isi nama invensi dan deskripsi singkatnya untuk memulai penilaian."
+              : "Simply enter the invention name and a short description to begin."}
           </p>
-          <form onSubmit={handleCreateTech} className="space-y-5">
-            <div>
-              <label className={labelClass} htmlFor="title-en">
-                {id ? "Nama teknologi" : "Technology name"}
-              </label>
-              <input
-                id="title-en"
-                required
-                value={newTitleEn}
-                onChange={(e) => setNewTitleEn(e.target.value)}
-                placeholder="e.g., Hybrid Photocatalytic Wastewater Reactor"
-                className={inputClass}
-              />
+          <form onSubmit={handleCreateTech} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className={labelClass} htmlFor="title-en">
+                  {id ? "Judul Paten / Nama Inovasi" : "Patent Title / Innovation Name"}
+                </label>
+                <input
+                  id="title-en"
+                  required
+                  value={newTitleEn}
+                  onChange={(e) => setNewTitleEn(e.target.value)}
+                  placeholder={
+                    id
+                      ? "Contoh: Sistem Sensor IoT Pemantau Kualitas Air Industri"
+                      : "e.g., Industrial Water Quality IoT Sensor System"
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="patent">
+                  {id ? "Status Kekayaan Intelektual (KI)" : "IP / Patent Status"}
+                </label>
+                <select
+                  id="patent"
+                  value={newPatentStatus}
+                  onChange={(e) => setNewPatentStatus(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="granted">
+                    {id ? "Paten Terdaftar / Granted (DJKI)" : "Granted Patent (DJKI)"}
+                  </option>
+                  <option value="patent_pending">
+                    {id ? "Paten Sedang Didaftarkan (Pending)" : "Patent Pending"}
+                  </option>
+                  <option value="invention_disclosure">
+                    {id ? "Invensi Baru / Belum Didaftarkan" : "Invention Disclosure"}
+                  </option>
+                  <option value="non_patent_ip">
+                    {id ? "Hak Cipta / Perangkat Lunak / Desain Industri" : "Copyright / Software / Industrial Design"}
+                  </option>
+                </select>
+              </div>
             </div>
             <div>
               <label className={labelClass} htmlFor="desc">
-                {id ? "Deskripsi singkat" : "Short description"}
+                {id ? "Ringkasan Fungsi & Manfaat untuk Industri" : "Summary of Function & Industrial Benefit"}
               </label>
               <textarea
                 id="desc"
@@ -264,36 +310,53 @@ export default function DemoWorkspacePage() {
                 rows={3}
                 value={newDescEn}
                 onChange={(e) => setNewDescEn(e.target.value)}
-                placeholder={id ? "Apa yang dilakukan teknologi ini?" : "What does this technology do?"}
+                placeholder={
+                  id
+                    ? "Jelaskan secara singkat cara kerja teknologi dan masalah industri yang diselesaikan..."
+                    : "Briefly describe how the technology works and the industrial problem it solves..."
+                }
                 className={inputClass}
               />
             </div>
-            <Collapsible title={t.common.advanced}>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Collapsible title={id ? "Opsi Tambahan (Kode, Bidang, TKT/TRL)" : "Additional Options (Code, Field, TRL)"}>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
-                  <label className={labelClass} htmlFor="code">{id ? "Kode teknologi" : "Technology code"}</label>
-                  <input id="code" required value={newCode} onChange={(e) => setNewCode(e.target.value)} className={inputClass} />
+                  <label className={labelClass} htmlFor="code">
+                    {id ? "Kode Dokumen / Paten" : "Document / Patent Code"}
+                  </label>
+                  <input
+                    id="code"
+                    required
+                    value={newCode}
+                    onChange={(e) => setNewCode(e.target.value)}
+                    className={inputClass}
+                  />
                 </div>
                 <div>
-                  <label className={labelClass} htmlFor="domain">{id ? "Bidang" : "Field"}</label>
-                  <input id="domain" required value={newDomain} onChange={(e) => setNewDomain(e.target.value)} className={inputClass} />
+                  <label className={labelClass} htmlFor="domain">
+                    {id ? "Bidang Teknologi" : "Technology Field"}
+                  </label>
+                  <input
+                    id="domain"
+                    required
+                    value={newDomain}
+                    onChange={(e) => setNewDomain(e.target.value)}
+                    className={inputClass}
+                  />
                 </div>
                 <div>
-                  <label className={labelClass} htmlFor="title-id">{id ? "Nama (Bahasa Indonesia)" : "Name (Bahasa Indonesia)"}</label>
-                  <input id="title-id" value={newTitleId} onChange={(e) => setNewTitleId(e.target.value)} placeholder={id ? "Opsional" : "Optional"} className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass} htmlFor="trl">{id ? "Tingkat kesiapan (TRL 1–9)" : "Readiness level (TRL 1–9)"}</label>
-                  <input id="trl" type="number" min={1} max={9} value={newClaimedTrl} onChange={(e) => setNewClaimedTrl(Number(e.target.value))} className={inputClass} />
-                </div>
-                <div className="md:col-span-2">
-                  <label className={labelClass} htmlFor="patent">{id ? "Status paten" : "Patent status"}</label>
-                  <select id="patent" value={newPatentStatus} onChange={(e) => setNewPatentStatus(e.target.value)} className={inputClass}>
-                    <option value="patent_pending">{id ? "Dalam proses paten" : "Patent pending"}</option>
-                    <option value="granted">{id ? "Paten diberikan" : "Granted patent"}</option>
-                    <option value="invention_disclosure">{id ? "Belum didaftarkan" : "Not filed yet"}</option>
-                    <option value="non_patent_ip">{id ? "Know-how / Perangkat lunak" : "Know-how / Software"}</option>
-                  </select>
+                  <label className={labelClass} htmlFor="trl">
+                    {id ? "Klaim Awal TKT / TRL (1–9)" : "Initial Claimed TRL (1–9)"}
+                  </label>
+                  <input
+                    id="trl"
+                    type="number"
+                    min={1}
+                    max={9}
+                    value={newClaimedTrl}
+                    onChange={(e) => setNewClaimedTrl(Number(e.target.value))}
+                    className={inputClass}
+                  />
                 </div>
               </div>
             </Collapsible>
@@ -302,58 +365,147 @@ export default function DemoWorkspacePage() {
                 {t.common.cancel}
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? (id ? "Menyimpan..." : "Saving...") : id ? "Simpan Teknologi" : "Save Technology"}
+                {saving
+                  ? id
+                    ? "Menyimpan..."
+                    : "Saving..."
+                  : id
+                  ? "Simpan & Mulai Penilaian"
+                  : "Save & Start Assessment"}
               </Button>
             </div>
           </form>
         </Card>
       )}
 
+      {/* 3 Simple Steps Workflow Banner */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-900">
+            {id
+              ? "3 Langkah Mudah Penggunaan (Standar DJKI, Kampus & Industri)"
+              : "3 Simple Steps (For DJKI, Universities & Industry)"}
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {quickSteps.map((s) => {
+            const Icon = s.icon;
+            return (
+              <Link
+                key={s.href}
+                href={s.href}
+                className={`group flex flex-col justify-between rounded-2xl border p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  s.primary
+                    ? "border-red-300 bg-red-50/40 hover:border-red-500"
+                    : "border-slate-200 bg-white hover:border-red-300"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-white">
+                      {id ? `Langkah ${s.step}` : `Step ${s.step}`}
+                    </span>
+                    <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-700 transition group-hover:bg-red-600 group-hover:text-white">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-4 text-base font-bold text-slate-900">{s.title}</div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-slate-600">{s.desc}</p>
+                </div>
+                <div className="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-red-700 group-hover:translate-x-1 transition-transform">
+                  <span>{s.cta}</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
       {loading ? (
         <div className="py-12 text-center text-base text-slate-500">{t.common.loading}</div>
       ) : technologies.length === 0 ? (
         <EmptyState
-          title={id ? "Belum ada teknologi" : "No technologies yet"}
+          title={id ? "Belum ada paten atau teknologi" : "No patents or technologies yet"}
           description={
             id
-              ? "Mulai dengan menambahkan teknologi pertama Anda."
-              : "Start by adding your first technology."
+              ? "Mulai dengan mendaftarkan paten atau inovasi pertama Anda."
+              : "Start by registering your first patent or innovation."
           }
           action={
             <Button onClick={() => setShowCreateForm(true)}>
               <PlusCircle className="h-5 w-5" />
-              {id ? "Tambah Teknologi" : "Add Technology"}
+              {id ? "Daftarkan Paten / Inovasi" : "Register Patent / Innovation"}
             </Button>
           }
         />
       ) : (
         <>
+          {/* Active Technology Summary Card */}
           {activeTech && (
-            <section className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
-                  <div className="text-xs font-mono uppercase tracking-wider text-blue-700">
-                    {activeTech.code} • {activeTech.patent_application_number || activeTech.patent_status}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-md bg-red-50 px-2.5 py-0.5 font-mono text-xs font-bold text-red-700">
+                      {activeTech.code}
+                    </span>
+                    <span className="text-xs font-medium text-slate-500">
+                      • {id ? "No. Paten / Status:" : "Patent No. / Status:"}{" "}
+                      <strong className="text-slate-800">
+                        {activeTech.patent_application_number || activeTech.patent_status}
+                      </strong>
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      • {activeTech.inventor_organization}
+                    </span>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900">{titleOf(activeTech)}</h3>
+                  <h3 className="mt-1.5 text-xl font-bold text-slate-900">
+                    {titleOf(activeTech)}
+                  </h3>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Link
-                    href="/assessment"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100"
-                  >
-                    <Microscope className="h-4 w-4" />
-                    {id ? "Rincian Bukti & Skor" : "Inspect Evidence & Scores"}
-                  </Link>
+
+                {/* Instant Action Buttons for Active Patent */}
+                <div className="flex flex-wrap items-center gap-2.5">
                   <Link
                     href="/valuation"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-emerald-800"
                   >
                     <Calculator className="h-4 w-4" />
-                    {id ? "Buka Kalkulator WIPO" : "Open WIPO Calculator"}
+                    {id ? "Ubah Asumsi Valuasi (IDR)" : "Adjust Valuation (IDR)"}
                   </Link>
+                  <Link
+                    href="/assessment"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 transition hover:bg-slate-50"
+                  >
+                    <Microscope className="h-4 w-4 text-blue-700" />
+                    {id ? "Cek Bukti & TKT/TRL" : "Check Evidence & TRL"}
+                  </Link>
+                  <Link
+                    href="/commercialization"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 transition hover:bg-slate-50"
+                  >
+                    <TrendingUp className="h-4 w-4 text-indigo-600" />
+                    {id ? "Kesiapan Lisensi" : "Licensing Readiness"}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleQuickDownloadReport}
+                    disabled={downloadingPdf}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    {downloadingPdf
+                      ? id
+                        ? "Menyiapkan PDF..."
+                        : "Preparing PDF..."
+                      : id
+                      ? "Unduh PDF Resmi"
+                      : "Download Official PDF"}
+                  </button>
                 </div>
               </div>
+
               <FourOutputsGrid
                 outputs={activeTech.four_separate_outputs}
                 isDemo={activeTech.is_synthetic_demo}
@@ -362,42 +514,16 @@ export default function DemoWorkspacePage() {
             </section>
           )}
 
-          <section className="space-y-3">
-            <h2 className="text-xl font-semibold text-slate-900">
-              {id ? "Alur Pengujian Demo End-to-End" : "End-to-End Demo Walkthrough"}
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {steps.map((s) => {
-                const Icon = s.icon;
-                return (
-                  <Link
-                    key={s.href}
-                    href={s.href}
-                    className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md"
-                  >
-                    <div>
-                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-600 group-hover:text-white">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div className="mt-3.5 text-base font-bold text-slate-900">{s.title}</div>
-                      <p className="mt-1.5 text-xs leading-relaxed text-slate-600">{s.desc}</p>
-                    </div>
-                    <div className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-blue-700 group-hover:translate-x-1 transition-transform">
-                      {id ? "Buka modul" : "Open module"} <ArrowRight className="h-3.5 w-3.5" />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-
+          {/* Simple Portfolio Switcher */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-slate-900">
-                {id ? "Daftar Invensi dalam Portofolio" : "Inventions in Portfolio"}
+              <h2 className="text-lg font-bold text-slate-900">
+                {id
+                  ? "Daftar Paten & Teknologi Terdaftar (Klik untuk Memilih)"
+                  : "Registered Patents & Technologies (Click to Select)"}
               </h2>
-              <span className="text-sm text-slate-500">
-                {technologies.length} {id ? "teknologi terdaftar" : "registered technologies"}
+              <span className="text-xs font-medium text-slate-500">
+                {technologies.length} {id ? "dokumen terdaftar" : "registered items"}
               </span>
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -412,14 +538,27 @@ export default function DemoWorkspacePage() {
                     aria-pressed={isSelected}
                     className={`rounded-2xl border p-5 text-left transition ${
                       isSelected
-                        ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-100"
+                        ? "border-red-500 bg-red-50/40 ring-2 ring-red-100"
                         : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-base font-semibold text-slate-900">{titleOf(tech)}</div>
-                        <div className="mt-0.5 text-sm text-slate-500">{tech.domain}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-red-700">
+                            {tech.code}
+                          </span>
+                          {isSelected && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              {id ? "Sedang Aktif" : "Active"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 truncate text-base font-bold text-slate-900">
+                          {titleOf(tech)}
+                        </div>
+                        <div className="mt-0.5 text-xs text-slate-500">{tech.domain}</div>
                       </div>
                       {tech.expert_review_status === "approved" ? (
                         <Badge variant="success">{t.common.approvedStatus}</Badge>
@@ -429,22 +568,29 @@ export default function DemoWorkspacePage() {
                         <Badge variant="outline">{t.common.draftWatermark}</Badge>
                       )}
                     </div>
-                    <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                    <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-sm">
                       <div>
-                        <div className="text-xs text-slate-500">{t.fourOutputs.techAssessment}</div>
-                        <div className="font-semibold text-slate-900">
-                          {((fo.technology_assessment.normalized_score ?? 0) * 100).toFixed(0)}%
+                        <div className="text-xs text-slate-500">
+                          {id ? "Kematangan (TRL)" : "Maturity (TRL)"}
+                        </div>
+                        <div className="font-bold text-slate-900">
+                          {((fo.technology_assessment.normalized_score ?? 0) * 100).toFixed(0)}% (TRL{" "}
+                          {fo.technology_assessment.trl_native_1_to_9 || "-"})
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-slate-500">{t.fourOutputs.commReadiness}</div>
-                        <div className="font-semibold text-slate-900">
+                        <div className="text-xs text-slate-500">
+                          {id ? "Kesiapan Lisensi" : "Licensing Readiness"}
+                        </div>
+                        <div className="font-bold text-slate-900">
                           {((fo.commercialization_readiness.normalized_score ?? 0) * 100).toFixed(0)}%
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-slate-500">{t.fourOutputs.econValuation}</div>
-                        <div className="truncate font-semibold text-emerald-700">
+                        <div className="text-xs text-slate-500">
+                          {id ? "Valuasi WIPO (IDR)" : "WIPO Valuation"}
+                        </div>
+                        <div className="truncate font-bold text-emerald-700">
                           {fo.economic_valuation.dcf_base_formatted}
                         </div>
                       </div>

@@ -91,9 +91,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       label: t.nav.groupMain,
       items: [
         { href: "/demo", label: t.nav.portfolio, icon: LayoutDashboard },
-        { href: "/advisor", label: t.nav.advisor, icon: Sparkles },
         { href: "/submission", label: t.nav.submission, icon: FileUp },
-        { href: "/pipeline", label: t.nav.pipeline, icon: Cpu },
+        { href: "/valuation", label: t.nav.valuation, icon: Calculator },
+        { href: "/reports", label: t.nav.reports, icon: FileText },
       ],
     },
     {
@@ -101,8 +101,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       items: [
         { href: "/assessment", label: t.nav.assessment, icon: Microscope },
         { href: "/commercialization", label: t.nav.commercialization, icon: TrendingUp },
-        { href: "/valuation", label: t.nav.valuation, icon: Calculator },
-        { href: "/reports", label: t.nav.reports, icon: FileText },
+        { href: "/pipeline", label: t.nav.pipeline, icon: Cpu },
+        { href: "/advisor", label: t.nav.advisor, icon: Sparkles },
       ],
     },
     {
@@ -273,9 +273,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 onChange={(e) => handleRoleSwitch(e.target.value as keyof typeof DEMO_ACCOUNTS)}
                 className="rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-800"
               >
-                <option value="analyst">Analyst ({userName.split(",")[0]})</option>
-                <option value="expert_reviewer">Expert Reviewer</option>
-                <option value="admin">Administrator</option>
+                <option value="analyst">
+                  {lang === "id"
+                    ? `Pengelola KI / Kampus (${userName.split(",")[0]})`
+                    : `IP Analyst / Campus (${userName.split(",")[0]})`}
+                </option>
+                <option value="expert_reviewer">
+                  {lang === "id" ? "Pemeriksa Pakar / DJKI" : "Expert Reviewer / DJKI"}
+                </option>
+                <option value="admin">
+                  {lang === "id" ? "Administrator BTP" : "BTP Administrator"}
+                </option>
               </select>
             </div>
 

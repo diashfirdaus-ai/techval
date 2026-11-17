@@ -179,6 +179,19 @@ export function FourOutputsGrid({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="space-y-3 border-emerald-300 bg-emerald-50/40 p-5 sm:p-5">
+          <div>
+            <div className="text-sm font-bold text-emerald-950">{t.fourOutputs.econValuation}</div>
+            <div className="text-xs text-emerald-800">{t.fourOutputs.econHint}</div>
+          </div>
+          <div className="text-2xl font-bold text-emerald-800 break-words sm:text-3xl">
+            {outputs.economic_valuation.dcf_base_formatted}
+          </div>
+          <div className="text-xs font-medium text-emerald-900">
+            WIPO Standard (DCF & Royalti)
+          </div>
+        </Card>
+
         <Card className="space-y-3 p-5 sm:p-5">
           <div>
             <div className="text-sm font-semibold text-slate-900">{t.fourOutputs.techAssessment}</div>
@@ -187,7 +200,7 @@ export function FourOutputsGrid({
           <div className="text-3xl font-bold text-slate-900">{techScore.toFixed(0)}%</div>
           <ProgressBar value={techScore} color="bg-blue-600" />
           <div className="text-xs text-slate-600">
-            NASA TRL: <span className="font-semibold text-blue-700">{trl ? `${trl} / 9` : "-"}</span>
+            TKT / NASA TRL: <span className="font-semibold text-blue-700">{trl ? `Level ${trl} / 9` : "-"}</span>
           </div>
         </Card>
 
@@ -198,16 +211,6 @@ export function FourOutputsGrid({
           </div>
           <div className="text-3xl font-bold text-slate-900">{commScore.toFixed(0)}%</div>
           <ProgressBar value={commScore} color="bg-indigo-600" />
-        </Card>
-
-        <Card className="space-y-3 p-5 sm:p-5">
-          <div>
-            <div className="text-sm font-semibold text-slate-900">{t.fourOutputs.econValuation}</div>
-            <div className="text-xs text-slate-500">{t.fourOutputs.econHint}</div>
-          </div>
-          <div className="text-2xl font-bold text-emerald-700 break-words">
-            {outputs.economic_valuation.dcf_base_formatted}
-          </div>
         </Card>
 
         <Card className="space-y-3 p-5 sm:p-5">
