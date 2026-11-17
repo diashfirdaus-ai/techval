@@ -88,8 +88,8 @@ export function SolutionSection({ id }: { id: boolean }) {
       badge: id ? "Pilar Utama Transaksi Industri" : "Core Industrial Deal Pillar",
       title: id ? "1. Valuasi Ekonomi WIPO (Rupiah / IDR)" : "1. WIPO Economic Valuation (IDR)",
       desc: id
-        ? "Perhitungan finansial deterministik berbasis standar WIPO: Discounted Cash Flow (DCF), Relief-from-Royalty, Cost Approach, Market Comparables, serta simulasi risiko Monte Carlo (P10, P50, P90) untuk menentukan harga jual dan tarif royalti yang adil bagi kampus & industri."
-        : "Deterministic financial valuation grounded in WIPO standards: Discounted Cash Flow (DCF), Relief-from-Royalty, Cost Approach, Market Comparables, plus Monte Carlo risk simulation (P10, P50, P90) for fair campus-industry licensing deals.",
+        ? "Perhitungan finansial deterministik berbasis standar WIPO: Discounted Cash Flow (DCF), Relief-from-Royalty, Cost Approach, Market Comparables, serta simulasi risiko Monte Carlo (P10, P50, P90) untuk menentukan nilai transfer teknologi dan tarif royalti yang adil bagi kampus & industri."
+        : "Deterministic financial valuation grounded in WIPO standards: Discounted Cash Flow (DCF), Relief-from-Royalty, Cost Approach, Market Comparables, plus Monte Carlo risk simulation (P10, P50, P90) for fair campus-industry technology transfer and licensing deals.",
       highlight: true,
     },
     {

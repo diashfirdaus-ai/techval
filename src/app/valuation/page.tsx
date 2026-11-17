@@ -115,8 +115,8 @@ export default function ValuationStudioPage() {
             <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t.nav.valuation}</h1>
             <p className="text-sm leading-relaxed text-slate-600">
               {lang === "id"
-                ? "Pusat Perhitungan Nilai Ekonomi Teknologi dalam Rupiah (IDR) berbasis WIPO IP Valuation Basics (Income DCF, Relief-from-Royalty, Cost, & Market Comparables) untuk Penjualan/Lisensi Industri, Spin-Off Startup Kampus, dan Due Diligence Investasi."
-                : "Deterministic Technology Valuation Studio in Indonesian Rupiah (IDR) grounded in WIPO IP Valuation Basics (Income DCF, Relief-from-Royalty, Cost, & Market Comparables) for Industrial Licensing, Campus Spin-Offs, and Corporate Due Diligence."}
+                ? "Pusat Perhitungan Nilai Ekonomi Teknologi dalam Rupiah (IDR) berbasis WIPO IP Valuation Basics (Income DCF, Relief-from-Royalty, Cost, & Market Comparables) untuk Transfer Teknologi & Lisensi Industri, Spin-Off Startup Kampus, dan Due Diligence Investasi."
+                : "Deterministic Technology Valuation Studio in Indonesian Rupiah (IDR) grounded in WIPO IP Valuation Basics (Income DCF, Relief-from-Royalty, Cost, & Market Comparables) for Industrial Technology Transfer & Licensing, Campus Spin-Offs, and Corporate Due Diligence."}
             </p>
           </div>
           <Badge variant="success" className="px-3 py-1 text-xs">

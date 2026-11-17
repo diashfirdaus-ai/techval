@@ -21,7 +21,7 @@ export function ImpactSection({ id }: { id: boolean }) {
         ? "Bandung Techno Park (BTP) & Kantor Transfer Teknologi (TTO)"
         : "Bandung Techno Park (BTP) & Technology Transfer Offices (TTO)",
       what: id
-        ? "Mempercepat kurasi portofolio Kekayaan Intelektual (KI), menetapkan tarif royalti lisensi yang objektif, dan menyiapkan paket komersialisasi siap jual bagi tenant maupun spin-off startup."
+        ? "Mempercepat kurasi portofolio Kekayaan Intelektual (KI), menetapkan tarif royalti lisensi yang objektif, dan menyiapkan paket komersialisasi siap lisensi bagi tenant maupun spin-off startup."
         : "Accelerates IP portfolio curation, establishes objective licensing royalty rates, and prepares deal-ready commercialization packages for incubated startups and tenants.",
     },
     {

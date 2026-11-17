@@ -64,8 +64,8 @@ export default function CompanyProfileHomePage() {
       icon: GraduationCap,
       badge: id ? "Hilirisasi Kampus & TTO (BTP)" : "University & TTO (BTP) Commercialization",
       title: id
-        ? "Ubah Riset & Paten Kampus Menjadi Aset Siap Jual Bernilai Rupiah"
-        : "Turn Campus Patents & Research into Sellable IDR Assets",
+        ? "Ubah Riset & Paten Kampus Menjadi Aset Siap Komersialisasi Bernilai Rupiah"
+        : "Turn Campus Patents & Research into Commercialization-Ready IDR Assets",
       desc: id
         ? "Memudahkan peneliti Telkom University dan tim Bandung Techno Park menyusun dokumen valuasi resmi berstandar WIPO untuk menetapkan nilai dasar kekayaan intelektual (IP), pembentukan spin-off startup, dan kontrak komersialisasi."
         : "Empowers Telkom University researchers and Bandung Techno Park IP managers to generate official WIPO-compliant valuation dossiers for baseline IP pricing, startup spin-offs, and commercialization contracts.",
@@ -226,7 +226,7 @@ export default function CompanyProfileHomePage() {
               {id ? (
                 <>
                   Valuasi Teknologi Berstandar WIPO agar Inovasi Kampus{" "}
-                  <span className="text-red-600">Siap Dijual</span> &{" "}
+                  <span className="text-red-600">Siap Dikomersialisasikan</span> &{" "}
                   <span className="text-slate-800 underline decoration-red-500/40 decoration-wavy underline-offset-8">
                     Dilisensikan ke Industri
                   </span>
@@ -235,7 +235,7 @@ export default function CompanyProfileHomePage() {
               ) : (
                 <>
                   WIPO-Standard Technology Valuation Built for{" "}
-                  <span className="text-red-600">Commercial Sales</span> &{" "}
+                  <span className="text-red-600">Commercialization Readiness</span> &{" "}
                   <span className="text-slate-800 underline decoration-red-500/40 decoration-wavy underline-offset-8">
                     Industrial Licensing
                   </span>
@@ -336,8 +336,8 @@ export default function CompanyProfileHomePage() {
               }
             >
               {id
-                ? "Banyak hasil riset berhenti di laboratorium karena belum memiliki kepastian harga jual, perhitungan tarif royalti, dan uji kelayakan finansial yang dibutuhkan oleh manajemen korporasi maupun mitra manufaktur."
-                : "Many research outputs remain in laboratories because they lack transparent buyout pricing, royalty rate calculations, and financial feasibility metrics required by corporate management and manufacturing partners."}
+                ? "Banyak hasil riset berhenti di laboratorium karena belum memiliki kepastian nilai komersialisasi, perhitungan tarif royalti, dan uji kelayakan finansial yang dibutuhkan oleh manajemen korporasi maupun mitra manufaktur."
+                : "Many research outputs remain in laboratories because they lack transparent commercialization value, royalty rate calculations, and financial feasibility metrics required by corporate management and manufacturing partners."}
             </SectionHeading>
           </Reveal>
 
@@ -402,8 +402,8 @@ export default function CompanyProfileHomePage() {
                 }
               >
                 {id
-                  ? "Gunakan simulator di bawah ini saat menyusun penawaran harga jual/lisensi di Bandung Techno Park atau saat negosiasi kontrak komersial dengan mitra industri."
-                  : "Use the simulator below when structuring buyout or licensing offers at Bandung Techno Park or during commercial contract negotiations with industrial partners."}
+                  ? "Gunakan simulator di bawah ini saat menyusun valuasi komersialisasi/lisensi di Bandung Techno Park atau saat negosiasi kontrak dengan mitra industri."
+                  : "Use the simulator below when structuring commercialization and licensing valuations at Bandung Techno Park or during contract negotiations with industrial partners."}
               </SectionHeading>
             </Reveal>
             <Link
